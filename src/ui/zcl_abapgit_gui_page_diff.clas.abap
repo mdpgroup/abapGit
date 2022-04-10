@@ -1,14 +1,14 @@
-CLASS zcl_abapgit_gui_page_diff DEFINITION
-  PUBLIC
-  INHERITING FROM zcl_abapgit_gui_page
-  CREATE PUBLIC.
+class ZCL_ABAPGIT_GUI_PAGE_DIFF definition
+  public
+  inheriting from ZCL_ABAPGIT_GUI_PAGE
+  create public .
 
-  PUBLIC SECTION.
-    INTERFACES:
-      zif_abapgit_gui_hotkeys.
+public section.
 
-    TYPES:
-      BEGIN OF ty_file_diff,
+  interfaces ZIF_ABAPGIT_GUI_HOTKEYS .
+
+  types:
+    BEGIN OF ty_file_diff,
         path       TYPE string,
         filename   TYPE string,
         obj_type   TYPE string,
@@ -19,35 +19,37 @@ CLASS zcl_abapgit_gui_page_diff DEFINITION
         o_diff     TYPE REF TO zcl_abapgit_diff,
         changed_by TYPE syuname,
         type       TYPE string,
-      END OF ty_file_diff.
-    TYPES:
-      ty_file_diffs TYPE STANDARD TABLE OF ty_file_diff
+      END OF ty_file_diff .
+  types:
+    ty_file_diffs TYPE STANDARD TABLE OF ty_file_diff
                         WITH NON-UNIQUE DEFAULT KEY
                         WITH NON-UNIQUE SORTED KEY secondary
-                             COMPONENTS path filename.
+                             COMPONENTS path filename .
 
-    CONSTANTS:
-      BEGIN OF c_fstate,
+  constants:
+    BEGIN OF c_fstate,
         local  TYPE c LENGTH 1 VALUE 'L',
         remote TYPE c LENGTH 1 VALUE 'R',
         both   TYPE c LENGTH 1 VALUE 'B',
-      END OF c_fstate.
+      END OF c_fstate .
 
-    METHODS constructor
-      IMPORTING
-        !iv_key    TYPE zif_abapgit_persistence=>ty_repo-key
-        !is_file   TYPE zif_abapgit_definitions=>ty_file OPTIONAL
-        !is_object TYPE zif_abapgit_definitions=>ty_item OPTIONAL
-        !it_files  TYPE zif_abapgit_definitions=>ty_stage_tt OPTIONAL
-      RAISING
-        zcx_abapgit_exception.
+  methods CONSTRUCTOR
+    importing
+      !IV_KEY type ZIF_ABAPGIT_PERSISTENCE=>TY_REPO-KEY
+      !IS_FILE type ZIF_ABAPGIT_DEFINITIONS=>TY_FILE optional
+      !IS_OBJECT type ZIF_ABAPGIT_DEFINITIONS=>TY_ITEM optional
+      !IT_FILES type ZIF_ABAPGIT_DEFINITIONS=>TY_STAGE_TT optional
+    raising
+      ZCX_ABAPGIT_EXCEPTION .
 
-    METHODS zif_abapgit_gui_event_handler~on_event
-        REDEFINITION.
-  PROTECTED SECTION.
+  methods ZIF_ABAPGIT_GUI_EVENT_HANDLER~ON_EVENT
+    redefinition .
+  methods ZIF_ABAPGIT_GUI_RENDERABLE~RENDER
+    redefinition .
+protected section.
 
-    CONSTANTS:
-      BEGIN OF c_actions,
+  constants:
+    BEGIN OF c_actions,
         toggle_unified         TYPE string VALUE 'toggle_unified',
         toggle_hidden_chars    TYPE string VALUE 'toggle_hidden_chars',
         toggle_ignore_indent   TYPE string VALUE 'toggle_ignore_indent',
@@ -57,110 +59,114 @@ CLASS zcl_abapgit_gui_page_diff DEFINITION
         refresh_all            TYPE string VALUE 'refresh_all',
         refresh_local          TYPE string VALUE 'refresh_local',
         refresh_local_object   TYPE string VALUE 'refresh_local_object',
-      END OF c_actions ,
-      BEGIN OF c_action_texts,
+        gen_report             TYPE string VALUE 'gen_report',
+      END OF c_actions .
+  constants:
+    BEGIN OF c_action_texts,
         refresh_all   TYPE string VALUE `Refresh All`,
         refresh_local TYPE string VALUE `Refresh Local`,
-      END OF c_action_texts,
-      BEGIN OF c_action_titles,
+        gen_report    TYPE string VALUE `Generate Report`,
+      END OF c_action_texts .
+  constants:
+    BEGIN OF c_action_titles,
         refresh_local TYPE string VALUE `Refresh all local objects, without refreshing the remote`,
         refresh_all   TYPE string VALUE `Complete refresh of all objects, local and remote`,
-      END OF c_action_titles.
+        gen_report    TYPE string VALUE `Generate PDF-friendly report `,
+      END OF c_action_titles .
+  data MV_UNIFIED type ABAP_BOOL value ABAP_TRUE ##NO_TEXT.
+  data MO_REPO type ref to ZCL_ABAPGIT_REPO .
+  data MT_DIFF_FILES type TY_FILE_DIFFS .
 
-    DATA mv_unified TYPE abap_bool VALUE abap_true ##NO_TEXT.
-    DATA mo_repo TYPE REF TO zcl_abapgit_repo .
-    DATA mt_diff_files TYPE ty_file_diffs .
+  methods GET_NORMALIZED_FNAME_WITH_PATH
+    importing
+      !IS_DIFF type TY_FILE_DIFF
+    returning
+      value(RV_FILENAME) type STRING .
+  methods NORMALIZE_PATH
+    importing
+      !IV_PATH type STRING
+    returning
+      value(RV_NORMALIZED) type STRING .
+  methods NORMALIZE_FILENAME
+    importing
+      !IV_FILENAME type STRING
+    returning
+      value(RV_NORMALIZED) type STRING .
+  methods ADD_MENU_END
+    importing
+      !IO_MENU type ref to ZCL_ABAPGIT_HTML_TOOLBAR .
+  methods CALCULATE_DIFF
+    importing
+      !IS_FILE type ZIF_ABAPGIT_DEFINITIONS=>TY_FILE optional
+      !IS_OBJECT type ZIF_ABAPGIT_DEFINITIONS=>TY_ITEM optional
+      !IT_FILES type ZIF_ABAPGIT_DEFINITIONS=>TY_STAGE_TT optional
+    raising
+      ZCX_ABAPGIT_EXCEPTION .
+  methods ADD_MENU_BEGIN
+    importing
+      !IO_MENU type ref to ZCL_ABAPGIT_HTML_TOOLBAR .
+  methods RENDER_TABLE_HEAD_NON_UNIFIED
+    importing
+      !II_HTML type ref to ZIF_ABAPGIT_HTML
+      !IS_DIFF type TY_FILE_DIFF .
+  methods RENDER_BEACON_BEGIN_OF_ROW
+    importing
+      !II_HTML type ref to ZIF_ABAPGIT_HTML
+      !IS_DIFF type TY_FILE_DIFF .
+  methods RENDER_DIFF_HEAD_AFTER_STATE
+    importing
+      !II_HTML type ref to ZIF_ABAPGIT_HTML
+      !IS_DIFF type TY_FILE_DIFF .
+  methods INSERT_NAV
+    returning
+      value(RV_INSERT_NAV) type ABAP_BOOL .
+  methods RENDER_LINE_SPLIT_ROW
+    importing
+      !II_HTML type ref to ZIF_ABAPGIT_HTML
+      !IV_FILENAME type STRING
+      !IS_DIFF_LINE type ZIF_ABAPGIT_DEFINITIONS=>TY_DIFF
+      !IV_INDEX type SY-TABIX
+      !IV_FSTATE type CHAR1
+      !IV_NEW type STRING
+      !IV_OLD type STRING
+    raising
+      ZCX_ABAPGIT_EXCEPTION .
+  methods BUILD_MENU
+    returning
+      value(RO_MENU) type ref to ZCL_ABAPGIT_HTML_TOOLBAR .
+  methods SET_LAYOUT .
+  methods REFRESH
+    importing
+      !IV_ACTION type CLIKE
+    raising
+      ZCX_ABAPGIT_EXCEPTION .
+  methods REFRESH_FULL
+    raising
+      ZCX_ABAPGIT_EXCEPTION .
+  methods REFRESH_LOCAL
+    raising
+      ZCX_ABAPGIT_EXCEPTION .
+  methods REFRESH_LOCAL_OBJECT
+    importing
+      !IV_ACTION type CLIKE
+    raising
+      ZCX_ABAPGIT_EXCEPTION .
+  methods IS_REFRESH
+    importing
+      !IV_ACTION type STRING
+    returning
+      value(RV_IS_REFRSEH) type ABAP_BOOL .
+  methods MODIFY_FILES_BEFORE_DIFF_CALC
+    importing
+      !IT_DIFF_FILES_OLD type TY_FILE_DIFFS
+    returning
+      value(RT_FILES) type ZIF_ABAPGIT_DEFINITIONS=>TY_STAGE_TT .
+  methods ADD_VIEW_SUB_MENU
+    importing
+      !IO_MENU type ref to ZCL_ABAPGIT_HTML_TOOLBAR .
 
-    METHODS get_normalized_fname_with_path
-      IMPORTING
-        !is_diff           TYPE ty_file_diff
-      RETURNING
-        VALUE(rv_filename) TYPE string .
-    METHODS normalize_path
-      IMPORTING
-        !iv_path             TYPE string
-      RETURNING
-        VALUE(rv_normalized) TYPE string .
-    METHODS normalize_filename
-      IMPORTING
-        !iv_filename         TYPE string
-      RETURNING
-        VALUE(rv_normalized) TYPE string .
-    METHODS add_menu_end
-      IMPORTING
-        !io_menu TYPE REF TO zcl_abapgit_html_toolbar .
-    METHODS calculate_diff
-      IMPORTING
-        !is_file   TYPE zif_abapgit_definitions=>ty_file OPTIONAL
-        !is_object TYPE zif_abapgit_definitions=>ty_item OPTIONAL
-        !it_files  TYPE zif_abapgit_definitions=>ty_stage_tt OPTIONAL
-      RAISING
-        zcx_abapgit_exception .
-    METHODS add_menu_begin
-      IMPORTING
-        !io_menu TYPE REF TO zcl_abapgit_html_toolbar .
-    METHODS render_table_head_non_unified
-      IMPORTING
-        !ii_html TYPE REF TO zif_abapgit_html
-        !is_diff TYPE ty_file_diff .
-    METHODS render_beacon_begin_of_row
-      IMPORTING
-        !ii_html TYPE REF TO zif_abapgit_html
-        !is_diff TYPE ty_file_diff .
-    METHODS render_diff_head_after_state
-      IMPORTING
-        !ii_html TYPE REF TO zif_abapgit_html
-        !is_diff TYPE ty_file_diff .
-    METHODS insert_nav
-      RETURNING
-        VALUE(rv_insert_nav) TYPE abap_bool .
-    METHODS render_line_split_row
-      IMPORTING
-        !ii_html      TYPE REF TO zif_abapgit_html
-        !iv_filename  TYPE string
-        !is_diff_line TYPE zif_abapgit_definitions=>ty_diff
-        !iv_index     TYPE sy-tabix
-        !iv_fstate    TYPE char1
-        !iv_new       TYPE string
-        !iv_old       TYPE string
-      RAISING
-        zcx_abapgit_exception .
-    METHODS build_menu
-      RETURNING
-        VALUE(ro_menu) TYPE REF TO zcl_abapgit_html_toolbar .
-    METHODS set_layout.
-    METHODS refresh
-      IMPORTING
-        iv_action TYPE clike
-      RAISING
-        zcx_abapgit_exception .
-    METHODS refresh_full
-      RAISING
-        zcx_abapgit_exception .
-    METHODS refresh_local
-      RAISING
-        zcx_abapgit_exception .
-    METHODS refresh_local_object
-      IMPORTING
-        iv_action TYPE clike
-      RAISING
-        zcx_abapgit_exception .
-    METHODS is_refresh
-      IMPORTING
-        iv_action            TYPE string
-      RETURNING
-        VALUE(rv_is_refrseh) TYPE abap_bool.
-    METHODS modify_files_before_diff_calc
-      IMPORTING
-         it_diff_files_old TYPE ty_file_diffs
-      RETURNING
-        VALUE(rt_files)    TYPE zif_abapgit_definitions=>ty_stage_tt.
-    METHODS add_view_sub_menu
-      IMPORTING
-         io_menu TYPE REF TO zcl_abapgit_html_toolbar .
-
-    METHODS render_content
-        REDEFINITION .
+  methods RENDER_CONTENT
+    redefinition .
   PRIVATE SECTION.
     TYPES:
       BEGIN OF ty_view,
@@ -168,6 +174,7 @@ CLASS zcl_abapgit_gui_page_diff DEFINITION
         ignore_indent   TYPE abap_bool,
         ignore_comments TYPE abap_bool,
         ignore_case     TYPE abap_bool,
+        pdf_friendly    TYPE abap_bool,
       END OF ty_view.
     DATA mt_delayed_lines TYPE zif_abapgit_definitions=>ty_diffs_tt .
     DATA mv_repo_key TYPE zif_abapgit_persistence=>ty_repo-key .
@@ -256,12 +263,11 @@ CLASS zcl_abapgit_gui_page_diff DEFINITION
         is_status                   TYPE zif_abapgit_definitions=>ty_result
       RETURNING
         VALUE(rv_is_file_requested) TYPE abap_bool.
-
 ENDCLASS.
 
 
 
-CLASS zcl_abapgit_gui_page_diff IMPLEMENTATION.
+CLASS ZCL_ABAPGIT_GUI_PAGE_DIFF IMPLEMENTATION.
 
 
   METHOD add_filter_sub_menu.
@@ -363,6 +369,13 @@ CLASS zcl_abapgit_gui_page_diff IMPLEMENTATION.
 
 
   METHOD add_menu_begin.
+
+    io_menu->add(
+        iv_txt   = c_action_texts-gen_report
+        iv_typ   = zif_abapgit_html=>c_action_type-sapevent
+        iv_act   = c_actions-gen_report
+        iv_id    = c_actions-gen_report
+        iv_title = c_action_titles-gen_report ).
 
     io_menu->add(
         iv_txt   = c_action_texts-refresh_local
@@ -1269,6 +1282,10 @@ CLASS zcl_abapgit_gui_page_diff IMPLEMENTATION.
 
         ms_view-ignore_case = boolc( ms_view-ignore_case = abap_false ).
 
+      WHEN c_actions-gen_report.
+
+        ms_view-pdf_friendly = boolc( ms_view-pdf_friendly = abap_false ).
+
       WHEN OTHERS.
 
         IF is_refresh( ii_event->mv_action ) = abap_true.
@@ -1320,5 +1337,162 @@ CLASS zcl_abapgit_gui_page_diff IMPLEMENTATION.
     ls_hotkey_action-hotkey      = |h|.
     INSERT ls_hotkey_action INTO TABLE rt_hotkey_actions.
 
+  ENDMETHOD.
+
+
+  METHOD zif_abapgit_gui_renderable~render.
+
+    TRY.
+        CALL METHOD super->zif_abapgit_gui_renderable~render
+          RECEIVING
+            ri_html = ri_html.
+
+      CATCH zcx_abapgit_exception.
+    ENDTRY.
+
+    IF ms_view-pdf_friendly EQ 'X'.
+      DATA: lv_html            TYPE string,
+            lo_assm            TYPE REF TO zif_abapgit_gui_asset_manager,
+            lt_assets          TYPE zif_abapgit_gui_asset_manager=>ty_web_assets,
+
+            lv_commoncss       TYPE string,
+            lv_agiconscss      TYPE string,
+            lv_themedefaultcss TYPE string,
+            lv_commonjs        TYPE string,
+            lt_html            TYPE TABLE OF char255,
+
+            fullpath            TYPE string,
+            filename            TYPE string,
+            path                TYPE string,
+            user_action         TYPE i,
+            encoding            TYPE abap_encoding,
+
+            lv_xhtml            TYPE xstring,
+            filesize            TYPE i
+            .
+      FIELD-SYMBOLS: <assets> LIKE LINE OF lt_assets.
+
+      ri_html->add( '<p>Generate report debug</p>' ).
+      lo_assm = zcl_abapgit_ui_factory=>get_asset_manager( ).
+      lt_assets = lo_assm->get_all_assets( ).
+
+      LOOP AT lt_assets ASSIGNING <assets>.
+        CASE <assets>-url.
+          WHEN 'css/common.css'.
+            lv_commoncss = zcl_abapgit_convert=>xstring_to_string_utf8( <assets>-content ).
+            CONCATENATE '<style>'
+                        lv_commoncss
+                        '</style>'
+                   INTO lv_commoncss.
+          WHEN 'css/ag-icons.css'.
+            lv_agiconscss = zcl_abapgit_convert=>xstring_to_string_utf8( <assets>-content ).
+            CONCATENATE '<style>'
+                        lv_agiconscss
+                        '</style>'
+                   INTO lv_agiconscss.
+          WHEN 'css/theme-default.css'.
+            lv_themedefaultcss = zcl_abapgit_convert=>xstring_to_string_utf8( <assets>-content ).
+            CONCATENATE '<style>'
+                        lv_themedefaultcss
+                        '</style>'
+                   INTO lv_themedefaultcss.
+          WHEN 'js/common.js'.
+            lv_commonjs = zcl_abapgit_convert=>xstring_to_string_utf8( <assets>-content ).
+            CONCATENATE '<script>'
+                        lv_commonjs
+                        '</script>'
+                   INTO lv_commonjs.
+        ENDCASE.
+      ENDLOOP.
+
+      lv_html = ri_html->render( ).
+
+      REPLACE ALL OCCURRENCES OF '<link rel="stylesheet" type="text/css" href="css/common.css">'
+        IN lv_html
+        WITH lv_commoncss.
+
+      REPLACE ALL OCCURRENCES OF '<link rel="stylesheet" type="text/css" href="css/ag-icons.css">'
+        IN lv_html
+        WITH lv_agiconscss.
+
+      REPLACE ALL OCCURRENCES OF '<link rel="stylesheet" type="text/css" href="css/theme-default.css">'
+        IN lv_html
+        WITH lv_themedefaultcss.
+
+      REPLACE ALL OCCURRENCES OF '<script src="js/common.js"></script>'
+        IN lv_html
+        WITH lv_commonjs.
+
+      CALL FUNCTION 'SCMS_STRING_TO_XSTRING'
+        EXPORTING
+          text           = lv_html
+*         MIMETYPE       = ' '
+*         ENCODING       =
+       IMPORTING
+         BUFFER         = lv_xhtml
+       EXCEPTIONS
+         FAILED         = 1
+         OTHERS         = 2.
+
+      CALL FUNCTION 'SCMS_XSTRING_TO_BINARY'
+        EXPORTING
+          buffer                = lv_xhtml
+*         APPEND_TO_TABLE       = ' '
+       IMPORTING
+         OUTPUT_LENGTH         = filesize
+        tables
+          binary_tab            = lt_html.
+
+      CALL METHOD cl_gui_frontend_services=>file_save_dialog
+        EXPORTING
+          window_title         = 'Download Report'
+          with_encoding        = 'X'
+*          initial_directory    = 'D:\SAP'
+        CHANGING
+          filename             = filename
+          path                 = path
+          fullpath             = fullpath
+          user_action          = user_action
+          file_encoding        = encoding
+        EXCEPTIONS
+          cntl_error           = 1
+          error_no_gui         = 2
+          not_supported_by_gui = 3
+          OTHERS               = 4.
+
+      CALL METHOD cl_gui_frontend_services=>gui_download
+        EXPORTING
+          bin_filesize              = filesize
+          filename                  = fullpath
+          filetype                  = 'BIN'
+        changing
+          data_tab                  = lt_html
+        EXCEPTIONS
+          file_write_error          = 1
+          no_batch                  = 2
+          gui_refuse_filetransfer   = 3
+          invalid_type              = 4
+          no_authority              = 5
+          unknown_error             = 6
+          header_not_allowed        = 7
+          separator_not_allowed     = 8
+          filesize_not_allowed      = 9
+          header_too_long           = 10
+          dp_error_create           = 11
+          dp_error_send             = 12
+          dp_error_write            = 13
+          unknown_dp_error          = 14
+          access_denied             = 15
+          dp_out_of_memory          = 16
+          disk_full                 = 17
+          dp_timeout                = 18
+          file_not_found            = 19
+          dataprovider_exception    = 20
+          control_flush_error       = 21
+          not_supported_by_gui      = 22
+          error_no_gui              = 23
+          others                    = 24.
+
+    ENDIF.
   ENDMETHOD.
 ENDCLASS.

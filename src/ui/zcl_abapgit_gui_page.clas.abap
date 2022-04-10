@@ -88,7 +88,7 @@ ENDCLASS.
 
 
 
-CLASS zcl_abapgit_gui_page IMPLEMENTATION.
+CLASS ZCL_ABAPGIT_GUI_PAGE IMPLEMENTATION.
 
 
   METHOD constructor.
@@ -367,6 +367,5 @@ CLASS zcl_abapgit_gui_page IMPLEMENTATION.
 
     ri_html->add( '</body>' ).
     ri_html->add( '</html>' ).
-
   ENDMETHOD.
 ENDCLASS.
