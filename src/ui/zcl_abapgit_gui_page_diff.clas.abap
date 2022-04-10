@@ -1445,6 +1445,7 @@ CLASS ZCL_ABAPGIT_GUI_PAGE_DIFF IMPLEMENTATION.
 
       CALL METHOD cl_gui_frontend_services=>file_save_dialog
         EXPORTING
+          default_extension    = 'HTML'
           window_title         = 'Download Report'
           with_encoding        = 'X'
 *          initial_directory    = 'D:\SAP'
